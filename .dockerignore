@@ -1,0 +1,27 @@
+ Git
+.git
+.gitignore
+
+# IDE and editor specific
+.vscode/
+.idea/
+*.iml
+
+# Local environment files (should be passed as environment variables to the container)
+.env
+*.env
+
+# Go build cache and local binaries
+*.exe
+*.test
+vendor/
+bin/
+build/
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Docker related
+Dockerfile
+docker-compose.yml

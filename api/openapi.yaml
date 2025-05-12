@@ -1,0 +1,800 @@
+openapi: 3.0.3
+info:
+  title: Product Catalog Service API
+  description: |-
+    API for managing products and categories in the E-commerce Platform Lite.
+    This service handles product listings, details, inventory, categories, search, filtering, and recommendations.
+    Source Repository: https://github.com/Nurlybek1-cpu/product-catalog-service.git
+  version: v1.0.0
+  contact:
+    name: Product Service Team
+    # email: tokbosynnurlybek@gmail.com
+servers:
+  - url: http://localhost:8081/api/v1 # Example local development server for this service
+    description: Local development server
+  # Add other environments like staging or production if applicable
+  # - url: https://api.yourdomain.com/product-service/api/v1
+  #   description: Production server
+
+tags:
+  - name: Categories
+    description: Operations related to product categories
+  - name: Products
+    description: Operations related to products, including search, filtering, and recommendations
+
+components:
+  schemas:
+    # --- Category Schemas ---
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Unique identifier for the category.
+          readOnly: true
+        name:
+          type: string
+          description: Name of the category.
+          example: "Electronics"
+        description:
+          type: string
+          nullable: true
+          description: A brief description of the category.
+          example: "Gadgets, devices, and all things electronic."
+        parent_category_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: ID of the parent category for hierarchical structures.
+          example: null # or 1 if it's a sub-category
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp of when the category was created.
+          readOnly: true
+          example: "2024-05-11T10:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp of when the category was last updated.
+          readOnly: true
+          example: "2024-05-11T10:00:00Z"
+      required:
+        - name
+
+    CategoryInput:
+      type: object
+      description: Data required to create or update a category.
+      properties:
+        name:
+          type: string
+          description: Name of the category.
+          example: "Laptops"
+        description:
+          type: string
+          nullable: true
+          description: A brief description of the category.
+          example: "High-performance portable computers."
+        parent_category_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: ID of the parent category.
+          example: 1
+      required:
+        - name
+
+    # --- Product Schemas ---
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Unique identifier for the product.
+          readOnly: true
+        name:
+          type: string
+          description: Name of the product.
+          example: "UltraBook Pro X2"
+        description:
+          type: string
+          nullable: true
+          description: Detailed description of the product.
+          example: "A thin and light ultrabook with a stunning display."
+        sku:
+          type: string
+          description: Stock Keeping Unit - unique identifier for inventory.
+          example: "UBPX2-SLV-16G"
+        price:
+          type: number
+          format: double
+          description: Price of the product.
+          example: 1499.99
+        stock_quantity:
+          type: integer
+          format: int32
+          description: Current available stock quantity.
+          example: 25
+        category_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: ID of the category this product belongs to.
+          example: 4
+        image_url:
+          type: string
+          format: url
+          nullable: true
+          description: URL to the primary product image.
+          example: "https://placehold.co/600x400/EEE/31343C?text=UltraBook+Pro+X2"
+        is_active:
+          type: boolean
+          description: Flag indicating if the product is active/visible.
+          default: true
+          example: true
+        attributes:
+          type: object
+          nullable: true
+          description: Flexible field for additional product attributes (e.g., size, color).
+          additionalProperties: true # Allows any properties
+          example: { "color": "Silver", "ram_gb": 16, "storage_ssd_gb": 512 }
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp of when the product was created.
+          readOnly: true
+          example: "2024-05-11T10:05:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp of when the product was last updated.
+          readOnly: true
+          example: "2024-05-11T10:05:00Z"
+      required:
+        - name
+        - sku
+        - price
+        - stock_quantity
+
+    ProductInput:
+      type: object
+      description: Data required to create or update a product.
+      properties:
+        name:
+          type: string
+          example: "UltraBook Pro X2"
+        description:
+          type: string
+          nullable: true
+          example: "A thin and light ultrabook."
+        sku:
+          type: string
+          example: "UBPX2-SLV-16G-NEW"
+        price:
+          type: number
+          format: double
+          example: 1599.99
+        stock_quantity:
+          type: integer
+          format: int32
+          example: 30
+        category_id:
+          type: integer
+          format: int64
+          nullable: true
+          example: 4
+        image_url:
+          type: string
+          format: url
+          nullable: true
+          example: "https://placehold.co/600x400/EEE/31343C?text=UltraBook+Pro+X2+New"
+        is_active:
+          type: boolean
+          default: true
+          example: true
+        attributes:
+          type: object
+          nullable: true
+          additionalProperties: true
+          example: { "color": "Space Gray", "ram_gb": 16, "storage_ssd_gb": 1024 }
+      required:
+        - name
+        - sku
+        - price
+        - stock_quantity
+
+    ProductListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+
+    # --- Common Schemas ---
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+          description: Internal error code or HTTP status code.
+        message:
+          type: string
+          description: A human-readable error message.
+        details:
+          type: string
+          nullable: true
+          description: Optional additional details about the error.
+      required:
+        - message
+
+    PaginationInfo:
+      type: object
+      properties:
+        page:
+          type: integer
+          format: int32
+          description: Current page number.
+        limit:
+          type: integer
+          format: int32
+          description: Number of items per page.
+        total_items:
+          type: integer
+          format: int64
+          description: Total number of items available.
+        total_pages:
+          type: integer
+          format: int32
+          description: Total number of pages.
+
+  securitySchemes:
+    BearerAuth: # Can be used to denote JWT authentication
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+paths:
+  # --- Category Paths ---
+  /categories:
+    get:
+      tags:
+        - Categories
+      summary: List all categories
+      operationId: listCategories
+      parameters:
+        - name: page
+          in: query
+          description: Page number for pagination.
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 1
+        - name: limit
+          in: query
+          description: Number of categories per page.
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 10
+      responses:
+        '200':
+          description: A list of categories.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Category'
+                  pagination:
+                    $ref: '#/components/schemas/PaginationInfo'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags:
+        - Categories
+      summary: Create a new category
+      operationId: createCategory
+      security:
+        - BearerAuth: [] # Indicates this endpoint requires Bearer token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryInput'
+      responses:
+        '201':
+          description: Category created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized (token missing or invalid)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (user does not have permission)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /categories/{categoryId}:
+    get:
+      tags:
+        - Categories
+      summary: Get a category by ID
+      operationId: getCategoryById
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          description: ID of the category to retrieve.
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Category details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '404':
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Categories
+      summary: Update a category by ID
+      operationId: updateCategoryById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          description: ID of the category to update.
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryInput'
+      responses:
+        '200':
+          description: Category updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Categories
+      summary: Delete a category by ID
+      operationId: deleteCategoryById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          description: ID of the category to delete.
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Category deleted successfully.
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # --- Product Paths ---
+  /products:
+    get:
+      tags:
+        - Products
+      summary: List, search, filter, and sort products
+      operationId: listProducts
+      parameters:
+        - name: q
+          in: query
+          description: Search query for product name or description.
+          required: false
+          schema:
+            type: string
+        - name: category_id
+          in: query
+          description: Filter by category ID.
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - name: min_price
+          in: query
+          description: Filter by minimum price.
+          required: false
+          schema:
+            type: number
+            format: double
+        - name: max_price
+          in: query
+          description: Filter by maximum price.
+          required: false
+          schema:
+            type: number
+            format: double
+        - name: is_active
+          in: query
+          description: Filter by active status.
+          required: false
+          schema:
+            type: boolean
+        - name: sort_by
+          in: query
+          description: Field to sort by (e.g., 'price', 'name', 'created_at').
+          required: false
+          schema:
+            type: string
+            enum: [price, name, created_at, updated_at]
+        - name: sort_order
+          in: query
+          description: Sort order ('asc' or 'desc').
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+        - name: page
+          in: query
+          description: Page number for pagination.
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 1
+        - name: limit
+          in: query
+          description: Number of products per page.
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 10
+      responses:
+        '200':
+          description: A list of products.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductListResponse'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags:
+        - Products
+      summary: Create a new product
+      operationId: createProduct
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+      responses:
+        '201':
+          description: Product created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /products/{productId}:
+    get:
+      tags:
+        - Products
+      summary: Get a product by ID
+      operationId: getProductById
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          description: ID of the product to retrieve.
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Product details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Products
+      summary: Update a product by ID
+      operationId: updateProductById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          description: ID of the product to update.
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+      responses:
+        '200':
+          description: Product updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Products
+      summary: Delete a product by ID
+      operationId: deleteProductById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          description: ID of the product to delete.
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Product deleted successfully.
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /products/recommendations:
+    get:
+      tags:
+        - Products
+      summary: Get product recommendations
+      operationId: getProductRecommendations
+      parameters:
+        - name: user_id # Optional, if recommendations are personalized
+          in: query
+          description: ID of the user for personalized recommendations.
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - name: product_id # Optional, if recommendations are related to a specific product
+          in: query
+          description: ID of the product for related recommendations.
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - name: limit
+          in: query
+          description: Number of recommendations to return.
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 5
+      responses:
+        '200':
+          description: A list of recommended products.
+          content:
+            application/json:
+              schema:
+                type: array # Simplified: just an array of products for now
+                items:
+                  $ref: '#/components/schemas/Product'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+

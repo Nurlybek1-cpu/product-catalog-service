@@ -1,0 +1,144 @@
+syntax = "proto3";
+
+package product.v1; // Package name for the .proto definitions
+
+// ** CRITICAL: Update this go_package option **
+// It should be: <your_product_service_module_path>/proto/v1/product;productpb
+// Based on your repo: "github.com/Nurlybek1-cpu/product-catalog-service/proto/v1/product;productpb"
+option go_package = "product-catalog-service/proto/v1/product;productpb";
+
+// Import necessary well-known types.
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+// Import common types.
+// This assumes common.proto is located such that protoc can find it via this path.
+// If common.proto is in product-catalog-service/proto/v1/common/common.proto,
+// and you run protoc from the product-catalog-service/proto/ directory with -I., this should work.
+// Or, if common.proto is in its own Go module, this import path would be different.
+import "proto/v1/common/common.proto"; // Refers to common.v1 package
+
+// --- Messages ---
+
+message Category {
+  int64 id = 1;
+  string name = 2;
+  optional string description = 3;
+  optional int64 parent_category_id = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+message Product {
+  int64 id = 1;
+  string name = 2;
+  optional string description = 3;
+  string sku = 4;
+  double price = 5;                             // Consider string for precise decimal handling in some languages, or custom decimal type
+  int32 stock_quantity = 6;
+  optional int64 category_id = 7;
+  optional string image_url = 8;
+  bool is_active = 9;
+  optional google.protobuf.Struct attributes = 10; // Flexible field for additional attributes
+  google.protobuf.Timestamp created_at = 11;
+  google.protobuf.Timestamp updated_at = 12;
+}
+
+// --- Service: ProductCatalogService ---
+
+service ProductCatalogService {
+  // Retrieves details for a specific product by its ID.
+  rpc GetProductDetails(GetProductDetailsRequest) returns (GetProductDetailsResponse);
+
+  // Lists products, potentially for internal service-to-service use.
+  rpc ListProductsInternal(ListProductsInternalRequest) returns (ListProductsInternalResponse);
+
+  // Updates the stock quantity for a given product or multiple products.
+  rpc UpdateStock(UpdateStockRequest) returns (UpdateStockResponse);
+
+  // Retrieves details for a specific category by its ID.
+  rpc GetCategoryDetails(GetCategoryDetailsRequest) returns (GetCategoryDetailsResponse);
+
+  // Lists categories, potentially for internal service-to-service use.
+  rpc ListCategoriesInternal(ListCategoriesInternalRequest) returns (ListCategoriesInternalResponse);
+
+  // Checks availability (stock and price) for a list of products.
+  // Crucial for cart validation by the Order Service.
+  rpc CheckProductsAvailability(CheckProductsAvailabilityRequest) returns (CheckProductsAvailabilityResponse);
+}
+
+// --- Request/Response Messages for ProductCatalogService ---
+
+message GetProductDetailsRequest {
+  int64 product_id = 1;
+}
+
+message GetProductDetailsResponse {
+  Product product = 1;
+}
+
+message ListProductsInternalRequest {
+  common.v1.PageInfoRequest page_info = 1;
+  optional int64 category_id = 2;     // Optional: Filter products by category ID.
+  repeated int64 product_ids = 3;     // Optional: Fetch specific products by their IDs.
+  optional bool include_inactive = 4; // Optional: Flag to include inactive products.
+}
+
+message ListProductsInternalResponse {
+  repeated Product products = 1;
+  common.v1.PageInfoResponse page_info = 2;
+}
+
+message StockUpdateItem {
+  int64 product_id = 1;
+  int32 quantity_change = 2;          // Negative to decrease, positive to increase.
+}
+
+message UpdateStockRequest {
+  repeated StockUpdateItem items = 1; // Allows batch stock updates
+  optional string order_id = 2;       // Optional: For tracing back to an order that triggered the stock update
+}
+
+message UpdateStockResponse {
+  repeated Product updated_products = 1; // Returns details of all products whose stock was updated.
+}
+
+message GetCategoryDetailsRequest {
+  int64 category_id = 1;
+}
+
+message GetCategoryDetailsResponse {
+  Category category = 1;
+}
+
+message ListCategoriesInternalRequest {
+  common.v1.PageInfoRequest page_info = 1;
+  optional int64 parent_category_id = 2; // Optional: Filter by parent category ID
+}
+
+message ListCategoriesInternalResponse {
+  repeated Category categories = 1;
+  common.v1.PageInfoResponse page_info = 2;
+}
+
+message ProductAvailabilityItemInput {
+    int64 product_id = 1;
+    int32 required_quantity = 2;
+}
+
+message CheckProductsAvailabilityRequest {
+    repeated ProductAvailabilityItemInput items = 1;
+}
+
+message ProductAvailabilityStatus {
+    int64 product_id = 1;
+    bool is_available = 2;        // Is enough stock available for the required quantity?
+    int32 available_quantity = 3; // Current actual stock quantity.
+    double current_price = 4;     // Current price of the product.
+    string name = 5;              // Product name for convenience in response.
+    optional string reason_not_available = 6; // e.g., "Insufficient stock", "Product inactive", "Product not found"
+}
+
+message CheckProductsAvailabilityResponse {
+    repeated ProductAvailabilityStatus statuses = 1;
+}
