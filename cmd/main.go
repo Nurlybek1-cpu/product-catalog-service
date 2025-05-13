@@ -21,8 +21,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	_ "github.com/lib/pq" // PostgreSQL driver
-	"github.com/joho/godotenv" // Import godotenv
+	_ "github.com/lib/pq" 
     
 	
 	productpb "product-catalog-service/proto/v1/product"
