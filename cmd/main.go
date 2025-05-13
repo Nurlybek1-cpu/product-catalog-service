@@ -22,7 +22,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	_ "github.com/lib/pq" // PostgreSQL driver
-
+	"github.com/joho/godotenv" // Import godotenv
+    
+	
 	productpb "product-catalog-service/proto/v1/product"
 
 	"google.golang.org/grpc"
@@ -36,6 +38,12 @@ const (
 )
 
 func main() {
+	err := godotenv.Load() // Loads .env from the current directory by default
+    if err != nil {
+        // Log that .env file was not found or couldn't be loaded, but don't make it fatal.
+        // The application can still proceed if environment variables are set in other ways.
+        log.Println("INFO: .env file not found or error loading, relying on system environment variables.")
+    }
 	// Initialize structured logger
 	logger := log.New(os.Stdout, fmt.Sprintf("[%s] ", defaultAppName), log.LstdFlags|log.Lshortfile|log.Lmicroseconds)
 	logger.Println("INFO: Starting service...")
