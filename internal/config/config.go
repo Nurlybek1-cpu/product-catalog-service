@@ -39,23 +39,18 @@ type GrpcServerConfig struct {
 
 // PostgresConfig holds PostgreSQL database connection details.
 type PostgresConfig struct {
-	Host     string `envconfig:"POSTGRES_HOST" required:"true"`
-	Port     string `envconfig:"POSTGRES_PORT" default:"5432"`
-	User     string `envconfig:"POSTGRES_USER" required:"true"`
-	Password string `envconfig:"POSTGRES_PASSWORD" required:"true"`
-	DBName   string `envconfig:"POSTGRES_DBNAME" required:"true"`
-	SSLMode  string `envconfig:"POSTGRES_SSLMODE" default:"disable"` // "disable", "require", "verify-full" etc.
-	// For connection pool settings:
-	MaxOpenConns    int           `envconfig:"POSTGRES_MAX_OPEN_CONNS" default:"25"`
-	MaxIdleConns    int           `envconfig:"POSTGRES_MAX_IDLE_CONNS" default:"25"`
-	ConnMaxLifetime time.Duration `envconfig:"POSTGRES_CONN_MAX_LIFETIME" default:"5m"`
+    Host     string `envconfig:"POSTGRES_HOST" required:"true"`
+    Port     string `envconfig:"POSTGRES_PORT" default:"5432"`
+    User     string `envconfig:"POSTGRES_USER" required:"true"`
+    Password string `envconfig:"POSTGRES_PASSWORD" required:"true"`
+    DBName   string `envconfig:"POSTGRES_DBNAME" required:"true"`
 }
 
 // DSN constructs the Data Source Name string for connecting to PostgreSQL.
 func (pc *PostgresConfig) DSN() string {
 	// Example: "host=localhost port=5432 user=user password=password dbname=mydb sslmode=disable"
-	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-		pc.Host, pc.Port, pc.User, pc.Password, pc.DBName, pc.SSLMode)
+	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		pc.Host, pc.Port, pc.User, pc.Password, pc.DBName)
 }
 
 var cfg Config

@@ -29,6 +29,7 @@ import (
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
+	"github.com/joho/godotenv"
 )
 
 const (
@@ -37,6 +38,9 @@ const (
 
 func main() {
 	// Initialize structured logger
+	if err := godotenv.Load(); err != nil {
+		log.Println("INFO: No .env file found or failed to load, relying on system environment")
+	}
 	logger := log.New(os.Stdout, fmt.Sprintf("[%s] ", defaultAppName), log.LstdFlags|log.Lshortfile|log.Lmicroseconds)
 	logger.Println("INFO: Starting service...")
 
@@ -65,9 +69,6 @@ func main() {
 		logger.Fatalf("FATAL: Failed to ping database: %v", err)
 	}
 	// Apply connection pool settings from config
-	db.SetMaxOpenConns(cfg.Postgres.MaxOpenConns)
-	db.SetMaxIdleConns(cfg.Postgres.MaxIdleConns)
-	db.SetConnMaxLifetime(cfg.Postgres.ConnMaxLifetime)
 
 	logger.Println("INFO: Database connection established and configured successfully.")
 	dbStore := store.NewPostgresStore(db) // Pass the *sql.DB to the store constructor

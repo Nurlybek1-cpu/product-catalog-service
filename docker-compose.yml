@@ -1,0 +1,12 @@
+services:
+  go-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:8081"
+      - "3001:9090"
+    env_file:
+      - .env
+    restart: unless-stopped
+    container_name: go_app_server
